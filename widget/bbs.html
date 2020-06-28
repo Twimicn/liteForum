@@ -1,0 +1,105 @@
+<template>
+    <div class="card">
+        <div page-id="div_posts" class="card-body">
+            <h5 class="card-title">帖子列表</h5>
+            <button page-id="btn_create" type="button" class="btn btn-primary">发帖</button>
+            <ul page-id="ul_posts" class="list-group list-group-flush"></ul>
+        </div>
+        <div page-id="div_detail" class="card-body" style="display: none">
+            <h5 page-id="post_title" class="card-title"></h5>
+            <button page-id="btn_back" type="button" class="btn btn-primary">返回列表</button>
+            <p page-id="post_content"></p>
+        </div>
+        <div page-id="div_create" class="card-body" style="display: none">
+            <h5 class="card-title">发帖</h5>
+            <div class="form-group">
+                <label for="txt_title">标题</label>
+                <input id="txt_title" class="form-control" type="text"/>
+            </div>
+            <div class="form-group">
+                <label for="txt_content">输出</label>
+                <textarea id="txt_content" class="form-control" rows="6"></textarea>
+            </div>
+            <button page-id="btn_publish" type="button" class="btn btn-block btn-success">发布</button>
+            <button page-id="btn_back" type="button" class="btn btn-block btn-secondary">取消</button>
+        </div>
+    </div>
+</template>
+<script>
+    (function () {
+        function BBS($elem, conf) {
+            this.token = conf.token;
+            this.$elem = $elem;
+        }
+
+        BBS.prototype.created = function () {
+            var that = this;
+            var $elem = this.$elem;
+            $elem.on('click', '[page-id="btn_create"]', function () {
+                $elem.find('[page-id="div_create"]').show();
+                $elem.find('[page-id="div_posts"]').hide();
+                $elem.find('[page-id="div_detail"]').hide();
+            });
+            $elem.on('click', '[page-id="btn_back"]', function () {
+                $elem.find('[page-id="div_create"]').hide();
+                $elem.find('[page-id="div_posts"]').show();
+                $elem.find('[page-id="div_detail"]').hide();
+            });
+            $elem.on('click', '[page-id="btn_publish"]', function () {
+                var data = {
+                    title: $elem.find('#txt_title').val(),
+                    content: $elem.find('#txt_content').val(),
+                    timestamp: (new Date().getTime()),
+                };
+                $.ajax({
+                    url: 'https://kvdb.io/' + that.token + '/post_' + data.timestamp,
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                }).then(function (res) {
+                    $elem.find('#txt_title').val('');
+                    $elem.find('#txt_content').val('');
+                    $elem.find('[page-id="div_create"]').hide();
+                    $elem.find('[page-id="div_posts"]').show();
+                    $elem.find('[page-id="div_detail"]').hide();
+                    that.reloadList();
+                });
+            });
+            $elem.on('click', '.post-link', function () {
+                var data = that.dataList[+$(this).data('index')];
+                $elem.find('[page-id="div_create"]').hide();
+                $elem.find('[page-id="div_posts"]').hide();
+                $elem.find('[page-id="div_detail"]').show();
+                $elem.find('[page-id="post_title"]').text(data.title);
+                $elem.find('[page-id="post_content"]').html(data.content);
+            });
+            this.reloadList();
+        };
+
+        BBS.prototype.renderList = function () {
+            if ($.isArray(this.dataList)) {
+                var html = '';
+                for (var i = 0; i < this.dataList.length; i++) {
+                    var d = this.dataList[i];
+                    html += '<li class="list-group-item"><a class="post-link" href="#?id='+ d.id +'" data-index="' + i + '">' + d.title + '</a></li>';
+                }
+                this.$elem.find('[page-id="ul_posts"]').html(html);
+            }
+        };
+
+        BBS.prototype.reloadList = function () {
+            var that = this;
+            $.ajax('https://kvdb.io/' + this.token + '/?regex=%5Epost_&format=json&values=true')
+                .then(function (res) {
+                    that.dataList = $.map(res, function (x) {
+                        var it = typeof x[1] === 'string' ? JSON.parse(x[1]) : x[1];
+                        it.id = x[0].substring(5);
+                        return it;
+                    });
+                    that.renderList();
+                });
+        };
+
+        $.Eira.defineWidget(BBS);
+    })();
+</script>
