@@ -81,7 +81,7 @@
                 var html = '';
                 for (var i = 0; i < this.dataList.length; i++) {
                     var d = this.dataList[i];
-                    html += '<li class="list-group-item"><a class="post-link" href="#?id='+ d.id +'" data-index="' + i + '">' + d.title + '</a></li>';
+                    html += '<li class="list-group-item"><a class="post-link" href="#?id=' + d.id + '" data-index="' + i + '">' + d.title + '</a></li>';
                 }
                 this.$elem.find('[page-id="ul_posts"]').html(html);
             }
@@ -89,17 +89,16 @@
 
         BBS.prototype.reloadList = function () {
             var that = this;
-            $.ajax('https://kvdb.io/' + this.token + '/?regex=%5Epost_&format=json&values=true')
-                .then(function (res) {
-                    that.dataList = $.map(res, function (x) {
-                        var it = typeof x[1] === 'string' ? JSON.parse(x[1]) : x[1];
-                        it.id = x[0].substring(5);
-                        return it;
-                    });
-                    that.renderList();
+            $.ajax('https://kvdb.io/' + this.token + '/?regex=%5Epost_&format=json&values=true').then(function (res) {
+                that.dataList = $.map(res, function (x) {
+                    var it = typeof x[1] === 'string' ? JSON.parse(x[1]) : x[1];
+                    it.id = x[0].substring(5);
+                    return it;
                 });
+                that.renderList();
+            });
         };
 
-        $.Eira.defineWidget(BBS);
+        Elaina.defineWidget(BBS);
     })();
 </script>
